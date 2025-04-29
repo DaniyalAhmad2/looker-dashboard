@@ -1,164 +1,60 @@
-/* ───────── VARIABLES ───────── */
-:root {
-  --sidebar-width: 260px;
-  --bp-mobile: 991.98px;   /*  ≈ Bootstrap lg-1 */
-}
 
-/* ───────── BASE ───────── */
-html,
-body,
-#root {
-  height: 100%;           /* desktop: lock to viewport */
+body, html {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ───────── LAYOUT WRAPPER ───────── */
-.app-shell {
-  display: flex;
-  height: 100%;           /* desktop: lock to viewport */
-  background: #212529;
-}
-
-/* ───────── SIDEBAR ───────── */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: calc(-1 * var(--sidebar-width)); /* hidden by default */
-  width: var(--sidebar-width);
+  padding: 0;
   height: 100%;
-  background: #212529;
-  color: #fff;
-  padding: 1.25rem 1rem;
-  transition: left 0.3s ease;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
-  z-index: 1040;
-}
-.sidebar.open {
-  left: 0;
-}
-.sidebar-title {
-  font-size: 0.9rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  opacity: 0.7;
-}
-.sidebar-list {
-  max-height: calc(100% - 80px);
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-.sidebar-list li {
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  line-height: 1.2;
-  transition: background 0.15s;
-}
-.sidebar-list li:hover,
-.sidebar-list li.active {
-  background: #34344a;
+  width: 100%;
+  overflow: hidden;
 }
 
-/* ───────── MAIN COLUMN ───────── */
-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;          /* allow children to flex properly */
-}
-main h1,
-main h2,
-main h3,
-main h4,
-main h5,
-main h6 {
-  text-align: center;
-}
-main .card {
-  margin-left: auto;
-  margin-right: auto;   /* auto margins ⇢ horizontal centring */
-}
-main.shifted {
-  margin-left: var(--sidebar-width);      /* push over when sidebar open */
-}
-@media (max-width: var(--bp-mobile)) {
-  main.shifted {
-    margin-left: 0;       /* overlay sidebar on mobile */
-  }
+.MuiBox-root {
+  box-sizing: border-box;
 }
 
-/* ───────── TOGGLE BUTTON ───────── */
-.toggle-btn {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1050;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-/* ───────── CARD & IFRAMES (DESKTOP DEFAULT) ───────── */
-.glow {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
-}
-.card-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;   /* horizontal */
-  text-align: center;    /* fallback for non-flex content */
-}
-
-.card.glow {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;          /* fill viewport height (desktop) */
-  margin: 0;
-  min-height: 0;
-}
-.card.glow .card-body {
-  flex: 0 0 auto;
-  padding: 1rem;
-}
-
-/* container for iframe – shows *internal* scrollbars (desktop) */
 .iframe-container {
-  flex: 1 1 auto;
-  overflow: auto;         /* interior scrollbars only */
-}
-.responsive-iframe {
+  position: relative;
   width: 100%;
   height: 100%;
-  border: none;
-  display: block;
+  overflow: hidden;
+  flex-grow: 1;
+}
+.MuiDrawer-root {
+  transition: width 0.3s ease;
 }
 
-/* ───────── MOBILE / NARROW WINDOW (< 992 px) ───────── */
-@media (max-width: var(--bp-mobile)) {
+.MuiList-root::-webkit-scrollbar {
+  width: 6px;
+}
 
-  /* 1️⃣  let the whole page exceed viewport → outer scroll */
-  html,
-  body,
-  #root,
-  .app-shell {
-    height: auto;         /* break the 100 vh lock */
-  }
+.MuiList-root::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
 
-  /* 2️⃣  let the card grow naturally (no internal scrollbars) */
-  .card.glow {
-    flex: 0 0 auto;       /* shrink-wrap to its content height */
-  }
+.MuiList-root::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
 
-  /* 3️⃣  let iframe container grow and rely on *page* scroll */
-  .iframe-container {
-    height: auto;
-    overflow: visible;    /* page scrolls, not the iframe box */
-  }
+.MuiList-root::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.looker-embed-container {
+  background-color: #ffffff;
+}
+
+iframe.responsive-iframe {
+  background-color: #ffffff;
+  color-scheme: normal;
+}
+
+.content-area {
+  color-scheme: normal;
+  background-color: #ffffff;
 }

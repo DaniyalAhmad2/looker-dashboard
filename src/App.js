@@ -1,108 +1,418 @@
 import { useEffect, useState } from "react";
+import { ExternalLink as LinkIcon } from "lucide-react";
+import "./App.css";
+
+
 import {
-  Menu as MenuIcon,
-  X as CloseIcon,
-  ExternalLink as LinkIcon,
-} from "lucide-react";
-import "./App.css"; // optional – only if you want extra custom styles
+  Box,
+  CssBaseline,
+  Typography,
+  Alert,
+  CircularProgress,
+  Button,
+  ThemeProvider,
+  createTheme,
+  useMediaQuery,
+  IconButton,
+  Paper,
+} from "@mui/material";
 
-const LAMBDA_URL = process.env.REACT_APP_LAMBDA_URL;
-function MyIframe({ src, title = "Client dashboard" }) {
-  return (
-    <iframe
-      src={src}
-      title={title}
-      className="responsive-iframe"
-      sandbox="allow-scripts allow-same-origin"
-      allowFullScreen
-    />
-  );
-}
-export default function App() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [clients, setClients] = useState([]);
-  const [activeClient, setActiveClient] = useState(null);
-  const [error, setError] = useState(null);
+import { Menu as MenuIcon } from "@mui/icons-material";
 
-  /* ───────── Fetch once on mount ───────── */
+import Sidebar from "./components/Sidebar";
+
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark",
+    primary: {
+      main: "#2196f3", 
+    },
+  },
+});
+
+// API endpoint
+const API_URL =
+  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/getItems";
+
+const createLookerStudioEmbedUrl = (url) => {
+  try {
+    if (!url) return "";
+
+    if (url.includes("/embed/")) {
+      return url;
+    }
+
+    return url.replace("/reporting/", "/embed/reporting/");
+  } catch (error) {
+    console.error("Error creating embed URL:", error);
+    return url;
+  }
+};
+
+// Looker Studio Embed Component
+function LookerStudioEmbed({ lookerLink, title = "Client dashboard" }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Embed URL
+  const embedUrl = createLookerStudioEmbedUrl(lookerLink);
+
+  // Handle iframe load events
+  const handleIframeLoad = () => {
+    console.log("Iframe loaded successfully");
+    setIsLoading(false);
+  };
+
+  // Handle iframe error
+  const handleIframeError = () => {
+    setIsLoading(false);
+    setErrorMessage("Failed to load the dashboard");
+  };
+
   useEffect(() => {
-    fetch(LAMBDA_URL)
-      .then((r) => r.json())
-      .then((payload) => setClients(JSON.parse(payload.body)))
-      .catch((e) => setError(`Fetch error: ${e.message}`));
+    const handleSecurityPolicyViolation = (e) => {
+      console.error("Content Security Policy Violation:", e);
+      if (e.blockedURI?.includes("lookerstudio.google.com")) {
+        setErrorMessage(
+          "Content Security Policy blocked embedding Looker Studio"
+        );
+      }
+    };
+
+    document.addEventListener(
+      "securitypolicyviolation",
+      handleSecurityPolicyViolation
+    );
+
+    return () => {
+      document.removeEventListener(
+        "securitypolicyviolation",
+        handleSecurityPolicyViolation
+      );
+    };
   }, []);
 
-  const ToggleIcon = drawerOpen ? CloseIcon : MenuIcon;
+  return (
+    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+      {/* Loading Indicator */}
+      {isLoading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            zIndex: 20,
+            p: 3,
+            textAlign: "center",
+          }}
+        >
+          <Paper sx={{ p: 3, maxWidth: 500, bgcolor: "background.paper" }}>
+            <Typography variant="h6" gutterBottom>
+              Unable to Embed Dashboard
+            </Typography>
+            <Typography variant="body2" paragraph sx={{ mb: 2 }}>
+              {errorMessage ||
+                "Due to security restrictions, this Looker Studio dashboard cannot be embedded directly in the application."}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              href={lookerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              startIcon={<LinkIcon size={16} />}
+            >
+              Open in Looker Studio
+            </Button>
+          </Paper>
+        </Box>
+      )}
+
+      <iframe
+        src={embedUrl}
+        title={title}
+        width="100%"
+        height="100%"
+        style={{
+          border: "none",
+          width: "100%",
+          height: "100%",
+          display: "block",
+          backgroundColor: "#fff", 
+        }}
+        onLoad={handleIframeLoad}
+        onError={handleIframeError}
+        frameBorder="0"
+        allowFullScreen
+      />
+    </Box>
+  );
+}
+
+export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [activeCompany, setActiveCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const isMobile = useMediaQuery(darkTheme.breakpoints.down("sm"));
+
+  /* ───────── Fetch API data on mount ───────── */
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setLoading(true);
+
+        // Use GET request with appropriate headers
+        const response = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        // Parse response properly
+        const data = await response.json();
+
+        // Handle the API response structure correctly
+        const companiesData = Array.isArray(data)
+          ? data
+          : data.body
+          ? typeof data.body === "string"
+            ? JSON.parse(data.body)
+            : data.body
+          : [];
+
+        console.log("API Data:", companiesData);
+        setCompanies(companiesData);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching company data:", err);
+        setError(`Failed to load companies: ${err.message}`);
+        setLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
+  const companyItems = companies.map((company) => ({
+    id: company.company_id,
+    name: company.company_name,
+    data: company, 
+  }));
+
+  // Handle company selection
+  const handleCompanyClick = (item) => {
+    setActiveCompany(item.data);
+    if (isMobile) {
+      setSidebarOpen(false); 
+    }
+  };
+
+  const handleOpenInNewTab = () => {
+    if (activeCompany && activeCompany.looker_link) {
+      window.open(activeCompany.looker_link, "_blank");
+    }
+  };
 
   return (
-    <div className="app-shell" data-bs-theme="dark">
-      {/* ───────── Sidebar ───────── */}
-      <aside className={`sidebar ${drawerOpen ? "open" : ""}`}>
-        <h6 className="sidebar-title">Clients</h6>
-        <ul className="list-unstyled sidebar-list">
-          {clients.map((c) => (
-            <li
-              key={c.company_id}
-              className={
-                activeClient?.company_id === c.company_id ? "active" : ""
-              }
-              onClick={() => {
-                setActiveClient(c);
-                setDrawerOpen(false); // auto-close on mobile
-              }}
-            >
-              {c.company_name}
-            </li>
-          ))}
-        </ul>
-      </aside>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          overflow: "hidden",
+          display: "flex",
+          position: "relative",
+        }}
+      >
+        <Sidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          items={companyItems}
+          title="Companies"
+          onItemClick={handleCompanyClick}
+          width={280}
+          variant="temporary" 
+        />
 
-      {/* ───────── Main ───────── */}
-      <main className={drawerOpen ? "shifted" : ""}>
-        <button
-          className="toggle-btn btn btn-light shadow-sm"
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          aria-label="Toggle clients list"
+        {/* Main Content Area */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
         >
-          <ToggleIcon size={20} />
-        </button>
-
-        {error && <div className="alert alert-danger mt-3">{error}</div>}
-        {!error && clients.length === 0 && (
-          <p className="text-muted mt-3">Loading clients…</p>
-        )}
-
-        {activeClient ? (
-          <div className="card glow mt-3">
-            {/* <div className="card-body">
-              <h4 className="card-title">{activeClient.company_name}</h4>
-              
-            </div> */}
-            <div className="iframe-container">
-            <MyIframe src={activeClient.looker_link.replace("/reporting/", "/embed/reporting/")} />
-            </div>
-            <div className="card-body">
-              <a
-                href={activeClient.looker_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-outline-light d-inline-flex align-items-center gap-1"
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 1,
+              borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+              backgroundColor: "background.paper",
+              zIndex: 10,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <IconButton
+                aria-label="toggle sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                sx={{
+                  mr: 2,
+                }}
               >
-                <LinkIcon size={16}  /> Open in Looker Studio
-              </a>
-              
-            </div>
-            
-            {/* console.log(activeClient.looker_link); */}
-          </div>
-        ) : (
-          clients.length > 0 && (
-            <p className="text-muted mt-3">
-              Select a client to see their Looker report.
-            </p>
-          )
-        )}
-      </main>
-    </div>
+                <MenuIcon />
+              </IconButton>
+              {activeCompany && (
+                <Typography variant="h6" noWrap>
+                  {activeCompany.company_name}
+                </Typography>
+              )}
+            </Box>
+
+            {activeCompany && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleOpenInNewTab}
+                startIcon={<LinkIcon size={16} />}
+                size="small"
+                sx={{
+                  textTransform: "uppercase",
+                  fontWeight: "medium",
+                  fontSize: "0.75rem",
+                  backgroundColor: "#2196f3", 
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#1976d2",
+                  },
+                }}
+              >
+                Open in Looker Studio
+              </Button>
+            )}
+          </Box>
+
+          {/* Content Area */}
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            {activeCompany ? (
+              <Box sx={{ height: "100%", width: "100%",  }}>
+                <LookerStudioEmbed
+                  lookerLink={activeCompany.looker_link}
+                  title={`${activeCompany.company_name} Dashboard`}
+                />
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {error && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+
+                {loading ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "200px",
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                ) : companies.length === 0 ? (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    No companies found.
+                  </Alert>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "100%",
+                      color: "text.secondary",
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      Select a company from the sidebar
+                    </Typography>
+                    <Typography variant="body2">
+                      {isMobile
+                        ? "Click the menu button to choose a company"
+                        : "Use the sidebar to choose a company"}
+                    </Typography>
+                    {isMobile && (
+                      <Button
+                        variant="outlined"
+                        onClick={() => setSidebarOpen(true)}
+                        sx={{ mt: 2 }}
+                      >
+                        Open Companies List
+                      </Button>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </div>
+    </ThemeProvider>
   );
 }
