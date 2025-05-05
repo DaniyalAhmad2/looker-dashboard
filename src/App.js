@@ -34,12 +34,10 @@ const darkTheme = createTheme({
 
 
 // API endpoint
-const API_URL =
-  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/getItems";
+const API_URL = process.env.API_URL;
 
 // Upload logo endpoint
-const UPLOAD_URL =
-  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/upload";
+const UPLOAD_URL =process.env.UPLOAD_URL;
 
 const createLookerStudioEmbedUrl = (url) => {
   try {
@@ -293,7 +291,6 @@ export default function App() {
             : data.body
           : [];
 
-        console.log("API Data:", companiesData);
         setCompanies(companiesData);
         setLoading(false);
       } catch (err) {
