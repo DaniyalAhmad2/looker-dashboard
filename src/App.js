@@ -2,6 +2,9 @@ import { useEffect, useState,useRef } from "react";
 import { ExternalLink as LinkIcon } from "lucide-react";
 import "./App.css";
 
+
+
+
 import {
   Box,
   CssBaseline,
@@ -17,6 +20,7 @@ import {
 } from "@mui/material";
 
 import { Menu as MenuIcon } from "@mui/icons-material";
+
 import Sidebar from "./components/Sidebar";
 
 const darkTheme = createTheme({
@@ -30,10 +34,12 @@ const darkTheme = createTheme({
 
 
 // API endpoint
-const API_URL = process.env.API_URL;
+const API_URL =
+  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/getItems";
 
 // Upload logo endpoint
-const UPLOAD_URL =process.env.UPLOAD_URL;
+const UPLOAD_URL =
+  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/upload";
 
 const createLookerStudioEmbedUrl = (url) => {
   try {
