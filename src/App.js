@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import { ExternalLink as LinkIcon } from "lucide-react";
 import "./App.css";
+
+
 
 
 import {
@@ -30,9 +32,14 @@ const darkTheme = createTheme({
   },
 });
 
+
 // API endpoint
 const API_URL =
   "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/getItems";
+
+// Upload logo endpoint
+const UPLOAD_URL =
+  "https://2epxz589cb.execute-api.us-east-2.amazonaws.com/call-classification-prod/upload";
 
 const createLookerStudioEmbedUrl = (url) => {
   try {
@@ -48,6 +55,8 @@ const createLookerStudioEmbedUrl = (url) => {
     return url;
   }
 };
+
+
 
 // Looker Studio Embed Component
 function LookerStudioEmbed({ lookerLink, title = "Client dashboard" }) {
@@ -151,6 +160,9 @@ function LookerStudioEmbed({ lookerLink, title = "Client dashboard" }) {
             >
               Open in Looker Studio
             </Button>
+
+
+
           </Paper>
         </Box>
       )}
@@ -182,7 +194,72 @@ export default function App() {
   const [activeCompany, setActiveCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+    // when a file is selected
+    // const handleFileChange = async (e) => {
+    //   const file = e.target.files?.[0];
+    //   if (!file || !activeCompany) return;
+  
+    //   const formData = new FormData();
+    //   // use company_id as user_id
+    //   formData.append("user_id", activeCompany.company_id);
+    //   formData.append("image", file, file.name);
+  
+    //   try {
+    //     const res = await fetch(UPLOAD_URL, {
+    //       method: "POST",
+    //       body: formData,
+    //     });
+    //     if (!res.ok) throw new Error(`Status ${res.status}`);
+    //     const body = await res.json();
+    //     console.log("Logo upload success", body);
+    //     // optionally refresh companies or update activeCompany.logo here
+    //   } catch (err) {
+    //     console.error("Logo upload failed", err);
+    //   } finally {
+    //     e.target.value = null;
+    //   }
+    // };
+    // 1) when a file is picked, just save it
+    const handleFileChange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setSelectedFile(file);
+      setUploadSuccess(false);
+      setUploadError(null);
+      e.target.value = null; // allow re-picking same file
+    };
+    
+    // 2) on “Upload” click, do the POST
+    const handleUpload = async () => {
+      if (!selectedFile || !activeCompany) return;
+      setUploading(true);
+      setUploadSuccess(false);
+      setUploadError(null);
+    
+      const formData = new FormData();
+      formData.append("user_id", activeCompany.company_id);
+      formData.append("image", selectedFile, selectedFile.name);
+    
+      try {
+        const res = await fetch(UPLOAD_URL, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        await res.json();
+        setUploadSuccess(true);
+        setSelectedFile(null);
+      } catch (err) {
+        setUploadError(err.message);
+      } finally {
+        setUploading(false);
+      }
+    };
   const isMobile = useMediaQuery(darkTheme.breakpoints.down("sm"));
 
   /* ───────── Fetch API data on mount ───────── */
@@ -311,6 +388,57 @@ export default function App() {
             </Box>
 
             {activeCompany && (
+              <>
+              {/* 1) select */}
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ ml: 1 }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Select Logo
+              </Button>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+              {/* 2) show chosen file & confirm */}
+              {selectedFile && (
+                <Box sx={{ display: "flex", alignItems: "center", ml: 2 }}>
+                  <Typography variant="body2">
+                    {selectedFile.name}
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    sx={{ ml: 1 }}
+                  >
+                    {uploading ? "Uploading…" : "Upload"}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setSelectedFile(null)}
+                    sx={{ ml: 1 }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              )}
+              {/* 3) feedback */}
+              {uploadSuccess && (
+                <Alert severity="success" sx={{ ml: 2 }}>
+                  Logo uploaded!
+                </Alert>
+              )}
+              {uploadError && (
+                <Alert severity="error" sx={{ ml: 2 }}>
+                  {uploadError}
+                </Alert>
+              )}
               <Button
                 variant="contained"
                 color="primary"
@@ -330,6 +458,8 @@ export default function App() {
               >
                 Open in Looker Studio
               </Button>
+
+                </>
             )}
           </Box>
 

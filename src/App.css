@@ -1,4 +1,4 @@
-
+/* Reset and Layout */
 body, html {
   margin: 0;
   padding: 0;
@@ -17,6 +17,12 @@ body, html {
   overflow: hidden;
 }
 
+.content-area {
+  color-scheme: normal;
+  background-color: #ffffff;
+}
+
+/* Iframe Styling */
 .iframe-container {
   position: relative;
   width: 100%;
@@ -24,10 +30,19 @@ body, html {
   overflow: hidden;
   flex-grow: 1;
 }
+
+.looker-embed-container,
+iframe.responsive-iframe {
+  background-color: #ffffff;
+  color-scheme: normal;
+}
+
+/* Drawer Transition */
 .MuiDrawer-root {
   transition: width 0.3s ease;
 }
 
+/* Scrollbar for Lists */
 .MuiList-root::-webkit-scrollbar {
   width: 6px;
 }
@@ -45,16 +60,15 @@ body, html {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.looker-embed-container {
-  background-color: #ffffff;
+/* Upload Logo Button */
+.upload-logo-btn {
+  margin-left: 8px;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.75rem;
 }
 
-iframe.responsive-iframe {
-  background-color: #ffffff;
-  color-scheme: normal;
-}
-
-.content-area {
-  color-scheme: normal;
-  background-color: #ffffff;
+/* Hide native file input */
+input[type="file"] {
+  display: none;
 }
