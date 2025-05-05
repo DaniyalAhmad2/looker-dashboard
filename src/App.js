@@ -2,9 +2,6 @@ import { useEffect, useState,useRef } from "react";
 import { ExternalLink as LinkIcon } from "lucide-react";
 import "./App.css";
 
-
-
-
 import {
   Box,
   CssBaseline,
@@ -20,7 +17,6 @@ import {
 } from "@mui/material";
 
 import { Menu as MenuIcon } from "@mui/icons-material";
-
 import Sidebar from "./components/Sidebar";
 
 const darkTheme = createTheme({
